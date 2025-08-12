@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 from fastapi import WebSocket
 
@@ -28,5 +28,23 @@ class ConnectManager:
             if not conns:  # 내가 마지막 사람이었을 경우
                 self.rooms.pop(room_id, None)
 
+    async def broadcast(self, room_id: str, message: dict):
+        async with self._lock:
+            conns = list(self.rooms.get(room_id, ()))
 
-manager = ConnectManager()
+        dead: List[WebSocket] = []
+
+        for ws in conns:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                dead.append(ws)
+
+        if dead:
+            async with self._lock:
+                room = self.rooms.get(room_id)
+                if room:
+                    for w in dead:
+                        room.discard(w)
+                    if not room:
+                        self.rooms.pop(room_id, None)
