@@ -17,9 +17,6 @@ class User(Base):
 
 class Seat(Base):
     __tablename__ = "seats"
-    __table_args__ = UniqueConstraint(
-        "row_label", "seat_no", name="uq_seat"
-    )  # A10 같은 row_label과 seat_no의 조합은 딱 한 번만 가능
 
     id = Column(
         BIGINT(unsigned=True),
