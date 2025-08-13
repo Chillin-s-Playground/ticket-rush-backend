@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.database import get_session_dependency
+from app.core.mysql import get_session_dependency
 from app.models.ticket import Seat
 
 app = FastAPI()
