@@ -4,17 +4,6 @@ from sqlalchemy.dialects.mysql import BIGINT, DATETIME, SMALLINT
 from app.models.base import Base
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(
-        BIGINT(unsigned=True),
-        primary_key=True,
-        autoincrement=True,
-        comment="유저 id",
-    )
-
-
 class Seat(Base):
     __tablename__ = "seats"
 
@@ -34,7 +23,7 @@ class Ticket(Base):
     __tablename__ = "tickets"
     __table_args__ = (
         UniqueConstraint("seat_id", name="uq_sold_once"),  # 좌석은 1번만 판매
-        UniqueConstraint("user_id", name="uq_user_one"),  # 유저는 전체에서 1좌석만
+        UniqueConstraint("user_uuid", name="uq_user_one"),  # 유저는 전체에서 1좌석만
     )
 
     id = Column(
@@ -49,12 +38,7 @@ class Ticket(Base):
         nullable=False,
         comment="좌석 FK",
     )
-    user_id = Column(
-        BIGINT(unsigned=True),
-        ForeignKey("users.id", ondelete="RESTRICT", onupdate="RESTRICT"),
-        nullable=False,
-        comment="유저 FK",
-    )
+    user_uuid = Column(String(36), nullable=False)
     purchased_at = Column(
         DATETIME(fsp=6),
         nullable=False,
