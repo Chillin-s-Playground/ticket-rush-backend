@@ -49,3 +49,14 @@ async def queue_and_join(
     return await TicketService(redis=redis).queue_and_join(
         event_id=event_id, user_uuid=req.user_uuid
     )
+
+
+@router.get("/events/{event_id}/seats")
+async def get_seat_states(
+    event_id: int,
+    _: None = Depends(verify_token),
+    db: Session = Depends(get_session_dependency),
+    redis: redis.Redis = Depends(get_redis),
+):
+    """처음 좌석상태 조회하는 API."""
+    return await TicketService(db=db, redis=redis).get_seats(event_id=event_id)

@@ -1,11 +1,11 @@
 from typing import Optional
-from uuid import uuid4
 
 import redis
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.exception import UnknownException
+from app.models.ticket import Seat
 from app.repositories.ticket import TicketRepository
 from app.ws.connection_manager import ConnectManager
 
@@ -49,3 +49,30 @@ class TicketService:
 
         except Exception as e:
             raise UnknownException(str(e))
+
+    async def get_seats(self, event_id: int):
+        try:
+            ticket_repo = TicketRepository(db=self.db, redis=self.redis)
+
+            # 2. SOLD 상태 포함 좌석 조회
+            seat_list = await ticket_repo.get_sold_seat_list()
+
+            # 3. HOLD 좌석 ID set (Redis)
+            hold_values = await ticket_repo.hold_the_seat(
+                event_id=event_id, seat_list=seat_list
+            )
+
+            # 4. 좌석리스트 상태 조합
+            if hold_values:
+                hold_set = {
+                    seat_list[i].seat_id for i, v in enumerate(hold_values) if v
+                }
+
+                for s in seat_list:
+                    if s.status != "SOLD" and s.seat_id in hold_set:
+                        s.status = "HOLD"
+
+            return seat_list
+
+        except Exception as e:
+            raise e

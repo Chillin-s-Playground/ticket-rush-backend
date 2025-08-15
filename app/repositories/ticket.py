@@ -1,8 +1,12 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import uuid4
 
 import redis
+from sqlalchemy import asc, case, func
 from sqlalchemy.orm import Session
+
+from app.models.ticket import Seat, Ticket
+from app.schema.ticket import SeatModel
 
 
 class TicketRepository:
@@ -47,3 +51,26 @@ class TicketRepository:
             await self.redis.delete(joined_key)
 
             return {"token": token}
+
+    # TODO 쿼리성능 최적화 필요.
+    async def get_sold_seat_list(self):
+        """결제완료 처리된 자리 조회하는 쿼리."""
+
+        res = (
+            self.db.query(
+                Seat.id.label("seat_id"),
+                func.concat(Seat.row_label, Seat.seat_no).label("seat_label"),
+                case((Ticket.id != None, "SOLD"), else_="AVAILABLE").label("status"),
+            )
+            .outerjoin(Ticket, Ticket.seat_id == Seat.id)
+            .order_by(asc(Seat.id))
+        ).all()
+
+        return [
+            SeatModel(seat_id=r.seat_id, seat_label=r.seat_label, status=r.status)
+            for r in res
+        ]
+
+    async def hold_the_seat(self, event_id: int, seat_list: List[SeatModel]):
+        hold_keys = [f"hold:{event_id}:{s.seat_id}" for s in seat_list]
+        return await self.redis.mget(*hold_keys)
