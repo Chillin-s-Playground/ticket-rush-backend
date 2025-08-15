@@ -1,10 +1,11 @@
 import redis
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
-from app.schema.ticket import JoinRequestDTO
+from app.core.token import verify_token
+from app.schema.ticket import HoldSeatRequestDTO, JoinRequestDTO
 from app.services.ticket import TicketService
 
 router = APIRouter()
