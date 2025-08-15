@@ -17,3 +17,5 @@ app.add_middleware(
 
 app.include_router(health)
 app.include_router(ticket)
+
+app.add_exception_handler(UnknownException, exception_handler)
