@@ -4,13 +4,14 @@ import redis
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.connection_manager import ConnectManager
 from app.core.exception import UnknownException
 from app.models.ticket import Seat
 from app.repositories.ticket import TicketRepository
-from app.ws.connection_manager import ConnectManager
+from app.utils.parser import build_payload
 
 JOIN_EXPIRE = 5 * 60
-TOKEN_EXPIRE = 5 * 60
+TOKEN_EXPIRE = 30 * 60
 HOLD_EXPIRE = 2 * 60
 
 
@@ -19,10 +20,14 @@ manager = ConnectManager()
 
 class TicketService:
     def __init__(
-        self, db: Optional[Session] = None, redis: Optional[redis.Redis] = None
+        self,
+        db: Optional[Session] = None,
+        redis: Optional[redis.Redis] = None,
+        manager: Optional[ConnectManager] = None,
     ) -> None:
         self.db = db
         self.redis = redis
+        self.manager = manager
 
     async def queue_and_join(self, event_id: int, user_uuid: str):
         """대기열 입장 및 토큰 발행하는 서비스 로직."""
@@ -58,7 +63,7 @@ class TicketService:
             seat_list = await ticket_repo.get_sold_seat_list()
 
             # 3. HOLD 좌석 ID set (Redis)
-            hold_values = await ticket_repo.hold_the_seat(
+            hold_values = await ticket_repo.get_hold_set(
                 event_id=event_id, seat_list=seat_list
             )
 
@@ -73,6 +78,78 @@ class TicketService:
                         s.status = "HOLD"
 
             return seat_list
+
+        except Exception as e:
+            raise e
+
+    async def hold_the_seat(
+        self,
+        user_uuid: str,
+        event_id: int,
+        seat_id: int,
+        seat_label: str,
+        seat_status: str,
+        prev_seat_id: Optional[int] = None,
+        prev_seat_label: Optional[str] = None,
+    ):
+        try:
+            ticket_repo = TicketRepository(redis=self.redis)
+
+            # 1. 좌석상태 분기처리
+            if not prev_seat_label:  # 처음 좌석 선택
+                locked = await ticket_repo.hold_the_seat(
+                    event_id=event_id,
+                    seat_label=seat_label,
+                    user_uuid=user_uuid,
+                    expire=HOLD_EXPIRE,
+                )
+                if not locked:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="이미 선택된 좌석입니다.",
+                    )
+                payload = build_payload((seat_id, "HOLD"))
+
+            elif (
+                prev_seat_label == seat_label and seat_status == "HOLD"
+            ):  # 선택한 좌석 취소
+                await ticket_repo.del_hold_the_seat(
+                    event_id=event_id, seat_label=seat_label
+                )
+                payload = build_payload((seat_id, "AVAILABLE"))
+
+            else:  # 좌석 변경
+                locked = await ticket_repo.hold_the_seat(
+                    event_id=event_id,
+                    seat_label=seat_label,
+                    user_uuid=user_uuid,
+                    expire=HOLD_EXPIRE,
+                )
+                if not locked:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="이미 선택된 좌석입니다.",
+                    )
+                await ticket_repo.del_hold_the_seat(
+                    event_id=event_id, seat_label=prev_seat_label
+                )
+
+                payload = [
+                    {"seat_id": seat_id, "seat_status": "HOLD"},
+                    {"seat_id": prev_seat_id, "seat_status": "AVAILABLE"},
+                ]
+
+            # 2. 변경된 사항 브로드캐스트.
+            print("payload = >", payload)
+            await self.manager.broadcast(
+                room_id=f"event:{event_id}:seat_update",
+                message={"type": "seat_update", "payload": payload},
+            )
+
+            return {
+                "seat_id": seat_id,
+                "seat_label": seat_label,
+            }
 
         except Exception as e:
             raise e

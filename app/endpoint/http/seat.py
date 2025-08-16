@@ -1,11 +1,12 @@
 import redis
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.connection_manager import ConnectManager, get_manager
 from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
 from app.core.token import verify_token
+from app.models.ticket import Seat
 from app.schema.ticket import HoldSeatRequestDTO, JoinRequestDTO
 from app.services.ticket import TicketService
 
@@ -61,3 +62,24 @@ async def get_seat_states(
 ):
     """처음 좌석상태 조회하는 API."""
     return await TicketService(db=db, redis=redis).get_seats(event_id=event_id)
+
+
+@api_router.post("/events/{event_id}/seats/hold")
+async def hold_the_seat(
+    event_id: int,
+    req: HoldSeatRequestDTO,
+    user_uuid=Depends(verify_token),
+    redis: redis.Redis = Depends(get_redis),
+    manager: ConnectManager = Depends(get_manager),
+):
+    """좌석 HOLD 처리"""
+
+    return await TicketService(redis=redis, manager=manager).hold_the_seat(
+        user_uuid=user_uuid,
+        event_id=(event_id),
+        seat_id=req.seat_id,
+        seat_label=req.seat_label,
+        seat_status=req.status,
+        prev_seat_id=req.prev_seat_id,
+        prev_seat_label=req.prev_seat_label,
+    )

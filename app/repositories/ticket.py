@@ -71,6 +71,23 @@ class TicketRepository:
             for r in res
         ]
 
-    async def hold_the_seat(self, event_id: int, seat_list: List[SeatModel]):
+    async def get_hold_set(self, event_id: int, seat_list: List[SeatModel]):
         hold_keys = [f"hold:{event_id}:{s.seat_id}" for s in seat_list]
         return await self.redis.mget(*hold_keys)
+
+    async def hold_the_seat(
+        self, event_id: int, seat_label: str, user_uuid: str, expire: int
+    ):
+        """좌석 HOLD하는 로직."""
+        hold_key = f"hold:{event_id}:{seat_label}"
+        return await self.redis.set(
+            hold_key,
+            user_uuid,
+            nx=True,
+            ex=expire,
+        )
+
+    async def del_hold_the_seat(self, event_id: int, seat_label: str):
+        """HOLD한 좌석 삭제."""
+        hold_key = f"hold:{event_id}:{seat_label}"
+        await self.redis.delete(hold_key)
