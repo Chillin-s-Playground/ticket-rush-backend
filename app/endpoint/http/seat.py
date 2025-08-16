@@ -2,16 +2,17 @@ import redis
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.connection_manager import ConnectManager, get_manager
 from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
 from app.core.token import verify_token
 from app.schema.ticket import HoldSeatRequestDTO, JoinRequestDTO
 from app.services.ticket import TicketService
 
-router = APIRouter()
+api_router = APIRouter()
 
 
-@router.post("/seats")
+@api_router.post("/seats")
 async def insert_seed_seats(db: Session = Depends(get_session_dependency)):
     """시드 좌석 적재"""
 
@@ -41,7 +42,7 @@ async def insert_seed_seats(db: Session = Depends(get_session_dependency)):
         print(str(e))
 
 
-@router.post("/queue/join/{event_id}")
+@api_router.post("/queue/join/{event_id}")
 async def queue_and_join(
     req: JoinRequestDTO, event_id: int = 123, redis: redis.Redis = Depends(get_redis)
 ):
@@ -51,7 +52,7 @@ async def queue_and_join(
     )
 
 
-@router.get("/events/{event_id}/seats")
+@api_router.get("/events/{event_id}/seats")
 async def get_seat_states(
     event_id: int,
     _: None = Depends(verify_token),

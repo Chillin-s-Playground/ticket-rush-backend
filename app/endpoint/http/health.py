@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
 
-router = APIRouter(prefix="/health", tags=["health"])
+api_router = APIRouter(prefix="/health", tags=["health"])
 
 
-@router.get("/health/db")
+@api_router.get("/health/db")
 def health_db(db: Session = Depends(get_session_dependency)):
     """DB 연결·세션 의존성 헬스체크."""
 
@@ -16,7 +16,7 @@ def health_db(db: Session = Depends(get_session_dependency)):
     return {"ping": True}
 
 
-@router.get("/health/redis")
+@api_router.get("/health/redis")
 async def health_redis(r=Depends(get_redis)):
     """redis 연결 헬스체크."""
 

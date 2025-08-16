@@ -2,8 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.exception import UnknownException, exception_handler
-from app.http.health import router as health
-from app.http.ticket import router as ticket
+from app.endpoint.http.health import api_router as health
+from app.endpoint.http.seat import api_router as seat
+from app.endpoint.ws.seat import ws_router as seat_ws
 
 app = FastAPI()
 
@@ -16,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(health)
-app.include_router(ticket)
+app.include_router(seat)
+app.include_router(seat_ws)
 
 app.add_exception_handler(UnknownException, exception_handler)
