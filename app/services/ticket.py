@@ -140,7 +140,6 @@ class TicketService:
                 ]
 
             # 2. 변경된 사항 브로드캐스트.
-            print("payload = >", payload)
             await self.manager.broadcast(
                 room_id=f"event:{event_id}:seat_update",
                 message={"type": "seat_update", "payload": payload},
@@ -149,7 +148,77 @@ class TicketService:
             return {
                 "seat_id": seat_id,
                 "seat_label": seat_label,
+                "seat_status": "AVAILABALE" if seat_status == "HOLD" else "HOLD",
             }
+
+        except Exception as e:
+            raise e
+
+    async def sold_the_seat(
+        self,
+        event_id: int,
+        user_uuid: str,
+        seat_id: Optional[int] = None,
+        seat_label: Optional[str] = None,
+    ):
+        """좌석 결제완료 처리 하는 서비스 로직."""
+        try:
+            ticket_repo = TicketRepository(db=self.db, redis=self.redis)
+
+            if not seat_id or not seat_label:
+                print("seat_id 없어서 발생하는 에러")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="좌석을 선택한 후 결제를 진행해주세요.",
+                )
+
+            # 1. SOLD된 좌석인지 체크하는 로직
+            is_sold = await ticket_repo.is_exist_sold_seat(
+                seat_id=seat_id,
+            )
+
+            if is_sold:
+                print("이미 결제가 완료된 좌석")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="이미 결제가 완료된 좌석입니다.",
+                )
+
+            # 2. HOLD하고 있는 좌석 있는지 체크
+            is_hold = await ticket_repo.is_exist_hold_seat(
+                event_id=event_id,
+                seat_label=seat_label,
+            )
+
+            if not is_hold:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="좌석을 선택한 후 결제를 진행해주세요.",
+                )
+
+            if is_hold != user_uuid:
+                print("해당 유저가 선택한 좌석이 아님")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="이미 다른 사용자가 선택한 좌석입니다.",
+                )
+
+            # 3. 결제 처리
+            await ticket_repo.set_sold_seat(user_uuid=user_uuid, seat_id=seat_id)
+            await ticket_repo.del_hold_the_seat(
+                event_id=event_id, seat_label=seat_label
+            )
+
+            # 4. broadcast
+            await self.manager.broadcast(
+                room_id=f"event:{event_id}:seat_update",
+                message={
+                    "type": "seat_update",
+                    "payload": {"seat_id": seat_id, "seat_status": "SOLD"},
+                },
+            )
+
+            return {"message": "결제완료"}
 
         except Exception as e:
             raise e

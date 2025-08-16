@@ -89,5 +89,28 @@ class TicketRepository:
 
     async def del_hold_the_seat(self, event_id: int, seat_label: str):
         """HOLD한 좌석 삭제."""
+
         hold_key = f"hold:{event_id}:{seat_label}"
         await self.redis.delete(hold_key)
+
+    async def is_exist_sold_seat(self, seat_id: Optional[int] = None):
+        """이미 유저가 구매한 상태인지 체크하는 쿼리."""
+
+        return self.db.query(Ticket.id).filter(Ticket.seat_id == seat_id).first()
+
+    async def is_exist_hold_seat(self, event_id: int, seat_label: Optional[str] = None):
+        """해당 좌석의 HOLD 상태 조회하는 쿼리."""
+        hold_key = f"hold:{event_id}:{seat_label}"
+        return await self.redis.get(hold_key)
+
+    async def set_sold_seat(
+        self,
+        user_uuid: str,
+        seat_id: Optional[int] = None,
+    ):
+        """좌석 결제 완료 처리하는 쿼리."""
+        try:
+            self.db.add(Ticket(seat_id=seat_id, user_uuid=user_uuid))
+            self.db.commit()
+        except Exception as e:
+            raise e

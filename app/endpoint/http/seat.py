@@ -7,7 +7,7 @@ from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
 from app.core.token import verify_token
 from app.models.ticket import Seat
-from app.schema.ticket import HoldSeatRequestDTO, JoinRequestDTO
+from app.schema.ticket import HoldSeatRequestDTO, JoinRequestDTO, PaySeatRequestDTO
 from app.services.ticket import TicketService
 
 api_router = APIRouter()
@@ -76,10 +76,29 @@ async def hold_the_seat(
 
     return await TicketService(redis=redis, manager=manager).hold_the_seat(
         user_uuid=user_uuid,
-        event_id=(event_id),
+        event_id=event_id,
         seat_id=req.seat_id,
         seat_label=req.seat_label,
         seat_status=req.status,
         prev_seat_id=req.prev_seat_id,
         prev_seat_label=req.prev_seat_label,
+    )
+
+
+@api_router.post("/events/{event_id}/seats/pay")
+async def hold_the_seat(
+    event_id: int,
+    req: PaySeatRequestDTO,
+    user_uuid=Depends(verify_token),
+    db: Session = Depends(get_session_dependency),
+    redis: redis.Redis = Depends(get_redis),
+    manager: ConnectManager = Depends(get_manager),
+):
+    """좌석 SOLD 처리"""
+
+    return await TicketService(db=db, redis=redis, manager=manager).sold_the_seat(
+        event_id=event_id,
+        seat_id=req.seat_id,
+        seat_label=req.seat_label,
+        user_uuid=user_uuid,
     )
