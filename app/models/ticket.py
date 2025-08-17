@@ -22,7 +22,6 @@ class Seat(Base):
 class Ticket(Base):
     __tablename__ = "tickets"
     __table_args__ = (
-        UniqueConstraint("seat_id", name="uq_sold_once"),  # 좌석은 1번만 판매
         UniqueConstraint("user_uuid", name="uq_user_one"),  # 유저는 전체에서 1좌석만
     )
 
