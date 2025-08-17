@@ -13,6 +13,8 @@ async def verify_token(
     vaild_token = await redis.get(f"gate:token:{token}")
 
     if not vaild_token:
-        raise HTTPException(status_code=401, detail="Invalid Token!")
+        raise HTTPException(
+            status_code=401, detail="유효하지 않은 세션입니다. 다시 시도해주세요."
+        )
 
     return vaild_token
