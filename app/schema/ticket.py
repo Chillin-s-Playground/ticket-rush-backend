@@ -37,3 +37,9 @@ class PaySeatRequestDTO(BaseModel):
     seat_label: Optional[str] = Field(
         default=None, description="좌석번호", examples=["A1"]
     )
+
+
+class DeactivateRequestDTO(BaseModel):
+    seat_label: Optional[str] = Field(
+        default=None, description="좌석번호", examples=["A1"]
+    )

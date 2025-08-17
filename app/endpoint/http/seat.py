@@ -1,5 +1,5 @@
 import redis
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 
 from app.core.connection_manager import ConnectManager, get_manager
@@ -7,7 +7,12 @@ from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
 from app.core.token import verify_token
 from app.models.ticket import Seat
-from app.schema.ticket import HoldSeatRequestDTO, JoinRequestDTO, PaySeatRequestDTO
+from app.schema.ticket import (
+    DeactivateRequestDTO,
+    HoldSeatRequestDTO,
+    JoinRequestDTO,
+    PaySeatRequestDTO,
+)
 from app.services.ticket import TicketService
 
 api_router = APIRouter()
@@ -104,3 +109,16 @@ async def hold_the_seat(
         seat_label=req.seat_label,
         user_uuid=user_uuid,
     )
+
+
+@api_router.post("/events/{event_id}/presence/leave")
+async def leave(
+    req: DeactivateRequestDTO,
+    event_id: int,
+    user_uuid: str = Depends(verify_token),
+    redis: redis.Redis = Depends(get_redis),
+    background_tasks: BackgroundTasks = None,
+):
+    service = TicketService(redis=redis)
+    background_tasks.add_task(service.cleanup_user, event_id, user_uuid, req.seat_label)
+    return {"ok": True}

@@ -1,7 +1,7 @@
 from typing import Optional
 
 import redis
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.connection_manager import ConnectManager
@@ -235,3 +235,18 @@ class TicketService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail
             )
+
+    async def cleanup_user(
+        self,
+        event_id: int,
+        user_uuid: str,
+        seat_label: Optional[str] = None,
+    ):
+        # 1) 활성 유저 목록에서 제거
+        active_user_key = f"active:{event_id}"
+        await self.redis.srem(active_user_key, user_uuid)
+
+        # 2) holds_by_user에 저장된 좌석 해제
+        if seat_label:
+            hold_key = f"hold:{event_id}:{seat_label}"
+            await self.redis.delete(hold_key)
