@@ -71,6 +71,16 @@ class TicketRepository:
             for r in res
         ]
 
+    async def is_paid_my_seat(self, user_uuid: str):
+        return (
+            self.db.query(
+                func.concat(Seat.row_label, Seat.seat_no).label("seat_label"),
+            )
+            .outerjoin(Ticket, Ticket.seat_id == Seat.id)
+            .filter(Ticket.user_uuid == user_uuid)
+            .order_by(asc(Seat.id))
+        ).first()
+
     async def get_hold_set(self, event_id: int, seat_list: List[SeatModel]):
         hold_keys = [f"hold:{event_id}:{s.seat_id}" for s in seat_list]
         return await self.redis.mget(*hold_keys)

@@ -8,6 +8,7 @@ from app.core.connection_manager import ConnectManager
 from app.core.exception import UnknownException
 from app.models.ticket import Seat
 from app.repositories.ticket import TicketRepository
+from app.schema.ticket import GetSeatResponseDTO
 from app.utils.parser import build_payload
 
 JOIN_EXPIRE = 5 * 60
@@ -55,7 +56,7 @@ class TicketService:
         except Exception as e:
             raise UnknownException(str(e))
 
-    async def get_seats(self, event_id: int):
+    async def get_seats(self, event_id: int, user_uuid: str):
         try:
             ticket_repo = TicketRepository(db=self.db, redis=self.redis)
 
@@ -77,7 +78,13 @@ class TicketService:
                     if s.status != "SOLD" and s.seat_id in hold_set:
                         s.status = "HOLD"
 
-            return seat_list
+            # 5. 내가 결제한 좌석 있는지 조회
+            my_paid_label = await ticket_repo.is_paid_my_seat(user_uuid=user_uuid)
+
+            return GetSeatResponseDTO(
+                seat_list=seat_list,
+                my_paid_label=my_paid_label.seat_label if my_paid_label else None,
+            )
 
         except Exception as e:
             raise e
@@ -166,7 +173,6 @@ class TicketService:
             ticket_repo = TicketRepository(db=self.db, redis=self.redis)
 
             if not seat_id or not seat_label:
-                print("seat_id 없어서 발생하는 에러")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="좌석을 선택한 후 결제를 진행해주세요.",
@@ -221,4 +227,11 @@ class TicketService:
             return {"message": "결제완료"}
 
         except Exception as e:
-            raise e
+            detail = str(e)
+            if "Duplicate entry" in str(e):
+                detail = (
+                    "이미 결제한 좌석이 있습니다. 인당 1개의 좌석만 구매 가능합니다."
+                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail
+            )
