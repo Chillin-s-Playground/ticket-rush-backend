@@ -5,8 +5,8 @@ import redis
 from sqlalchemy import asc, case, func
 from sqlalchemy.orm import Session
 
-from app.models.ticket import Seat, Ticket
-from app.schema.ticket import SeatModel
+from app.models.seat import Seat, Ticket
+from app.schema.seat import SeatModel
 
 
 class TicketRepository:

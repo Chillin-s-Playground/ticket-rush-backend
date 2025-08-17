@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.connection_manager import ConnectManager
 from app.core.exception import UnknownException
-from app.models.ticket import Seat
-from app.repositories.ticket import TicketRepository
-from app.schema.ticket import GetSeatResponseDTO
+from app.models.seat import Seat
+from app.repositories.seat import TicketRepository
+from app.schema.seat import GetSeatResponseDTO
 from app.utils.parser import build_payload
 
 JOIN_EXPIRE = 5 * 60

@@ -6,14 +6,14 @@ from app.core.connection_manager import ConnectManager, get_manager
 from app.core.mysql import get_session_dependency
 from app.core.redis import get_redis
 from app.core.token import verify_token
-from app.models.ticket import Seat
-from app.schema.ticket import (
+from app.models.seat import Seat
+from app.schema.seat import (
     DeactivateRequestDTO,
     HoldSeatRequestDTO,
     JoinRequestDTO,
     PaySeatRequestDTO,
 )
-from app.services.ticket import TicketService
+from app.services.seat import TicketService
 
 api_router = APIRouter()
 
