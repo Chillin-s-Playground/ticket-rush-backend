@@ -14,7 +14,6 @@ FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기�
 ```text
   1. 실시간 좌석 상태 반영
    - WebSocket 브로드캐스트를 통해 좌석 상태(HOLD, SOLD, AVAILABLE)가 즉시 모든 사용자에게 반영됩니다.
-   - 서버에서 다건 상태 변경을 payload로 묶어서 push하면, 클라이언트는 일괄 갱신을 합니다.
 
   2. 원자적 좌석 HOLD
      - Redis `SET NX EX` 명령을 사용해 동일 좌석을 동시에 두 명 이상이 점유하지 못하도록 보장합니다.
