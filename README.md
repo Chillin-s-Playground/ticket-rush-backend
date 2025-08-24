@@ -42,7 +42,11 @@ FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기�
     - WebSocket으로 좌석 상태(available/held/sold) 업데이트
     - 1~2초 내 전파 보장
 
-## 3. 성과 & 배운 점
+## 3. 부하테스트 기록
+
+#### [로컬 부하테스트 💻](https://www.notion.so/2597c0ec2370809db598e3f6f3bbc083) | [실서버 부하테스트 ☁️](https://www.notion.so/2597c0ec2370809db598e3f6f3bbc083)
+
+## 4. 성과 & 배운 점
 
 - Redis `SET NX EX`를 이용한 **원자적 좌석 점유**로 고부하 경쟁 상황에서도 단일 점유 보장
 - DB 유니크 제약 + 트랜잭션으로 **중복 결제 방지** 및 **멱등성(Idempotent) 결제 API** 구현
@@ -64,10 +68,10 @@ FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기�
   - [ ] 10,000석 이벤트 시드, 좌석 라벨 체계 고정
   - [ ] 샘플 유저 토큰 발급기/시드
 
-- [ ] **k6 부하 테스트**
-  - [ ] HTTP 시나리오 작성: HOLD 충돌 / 결제 레이스 / 좌석 변경
+- [] **k6 부하 테스트**
+  - [X] HTTP 시나리오 작성: HOLD 충돌 / 결제 레이스 / 좌석 변경
   - [ ] WS 시나리오 작성: 전파 지연 수집 (Trend 메트릭)
-  - [ ] 목표 기준(SLO) 반영한 thresholds 설정
+  - [X] 목표 기준(SLO) 반영한 thresholds 설정
 
 - [ ] **TTL 만료 자동 브로드캐스트**
   - [ ] 스케줄러로 주기 클린업 → 만료 키 스캔 후 일괄 브로드캐스트
@@ -76,5 +80,5 @@ FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기�
 - [ ] **초당 입장수 제한**
 
 - [ ] **성능 리포트 산출**
-  - [ ] Oversell = 0, p95/p99, 실패율, WS 전파시간 결과 표/그래프
+  - [X] Oversell = 0, p95/p99, 실패율, WS 전파시간 결과 표/그래프
   - [ ] 병목 원인 / 개선 포인트 요약  
