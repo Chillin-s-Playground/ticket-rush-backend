@@ -8,6 +8,14 @@
   <img src="https://img.shields.io/badge/amazon_aws-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white" />
 </div>
 
+<br/>
+
+<div>
+  <img src="https://github.com/user-attachments/assets/0e4e5c9f-75aa-452b-a82c-096d1df3352d" width="60%"/>
+  <br/>
+  <i>실제 부하테스트 녹화화면 GIF</i>
+</div>
+
 ## 1. 프로젝트 설명
 FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기화와 안전한 결제가 가능한 **대규모 티켓 예매 서비스**를 구현했습니다. (본 레포지터리는 백엔드 영역만 다룹니다. )
 
@@ -68,7 +76,7 @@ FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기�
   - [ ] 10,000석 이벤트 시드, 좌석 라벨 체계 고정
   - [ ] 샘플 유저 토큰 발급기/시드
 
-- [] **k6 부하 테스트**
+- [ ] **k6 부하 테스트**
   - [X] HTTP 시나리오 작성: HOLD 충돌 / 결제 레이스 / 좌석 변경
   - [ ] WS 시나리오 작성: 전파 지연 수집 (Trend 메트릭)
   - [X] 목표 기준(SLO) 반영한 thresholds 설정
