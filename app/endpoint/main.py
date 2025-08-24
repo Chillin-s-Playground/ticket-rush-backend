@@ -5,9 +5,11 @@ from app.core.exception import UnknownException, exception_handler
 from app.endpoint.http.health import api_router as health
 from app.endpoint.http.seat import api_router as seat
 from app.endpoint.ws.seat import ws_router as seat_ws
+from app.middleware.request_id import RequestIDMiddleware
 
 app = FastAPI()
 
+app.add_middleware(RequestIDMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
