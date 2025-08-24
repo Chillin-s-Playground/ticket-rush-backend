@@ -52,7 +52,7 @@ FastAPI + Redis + RDBMS(SQLAlchemy)를 활용해 실시간 좌석상태 동기�
 
 ## 3. 부하테스트 기록
 
-#### [로컬 부하테스트 💻](https://www.notion.so/2597c0ec2370809db598e3f6f3bbc083) | [실서버 부하테스트 ☁️](https://www.notion.so/2597c0ec2370809db598e3f6f3bbc083)
+#### [로컬 부하테스트 💻](https://www.notion.so/2597c0ec2370809db598e3f6f3bbc083)
 
 ## 4. 성과 & 배운 점
 
