@@ -9,6 +9,7 @@ from app.core.exception import UnknownException
 from app.models.seat import Seat
 from app.repositories.seat import TicketRepository
 from app.schema.seat import GetSeatResponseDTO
+from app.utils.logger import log_seat_action
 from app.utils.parser import build_payload
 
 JOIN_EXPIRE = 5 * 60
@@ -110,12 +111,16 @@ class TicketService:
                     user_uuid=user_uuid,
                     expire=HOLD_EXPIRE,
                 )
+
+                log_seat_action(seat_id, user_uuid, locked)
+
                 if not locked:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
                         detail="이미 선택된 좌석입니다.",
                     )
                 payload = build_payload((seat_id, "HOLD"))
+                seat_status = "HOLD"
 
             elif (
                 prev_seat_label == seat_label and seat_status == "HOLD"
@@ -124,6 +129,7 @@ class TicketService:
                     event_id=event_id, seat_label=seat_label
                 )
                 payload = build_payload((seat_id, "AVAILABLE"))
+                seat_status = "AVAILABLE"
 
             else:  # 좌석 변경
                 locked = await ticket_repo.hold_the_seat(
@@ -145,6 +151,7 @@ class TicketService:
                     {"seat_id": seat_id, "seat_status": "HOLD"},
                     {"seat_id": prev_seat_id, "seat_status": "AVAILABLE"},
                 ]
+                seat_status = "HOLD"
 
             # 2. 변경된 사항 브로드캐스트.
             await self.manager.broadcast(
@@ -155,7 +162,7 @@ class TicketService:
             return {
                 "seat_id": seat_id,
                 "seat_label": seat_label,
-                "seat_status": "AVAILABALE" if seat_status == "HOLD" else "HOLD",
+                "seat_status": seat_status,
             }
 
         except Exception as e:

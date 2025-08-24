@@ -14,6 +14,7 @@ from app.schema.seat import (
     PaySeatRequestDTO,
 )
 from app.services.seat import TicketService
+from app.utils.request_id import get_request_id
 
 api_router = APIRouter()
 
@@ -76,6 +77,7 @@ async def hold_the_seat(
     event_id: int,
     req: HoldSeatRequestDTO,
     user_uuid=Depends(verify_token),
+    _: None = Depends(get_request_id),
     redis: redis.Redis = Depends(get_redis),
     manager: ConnectManager = Depends(get_manager),
 ):
